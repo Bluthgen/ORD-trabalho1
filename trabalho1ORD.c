@@ -189,7 +189,7 @@ void povoaArquivo(){
 
 void criaIndices(FILE* base){
     /*
-        Tamanho de cada registro: sizeof(int) + sizeof(double)
+        Tamanho de cada registro: sizeof(int) + sizeof(long)
     */
 
     FILE* indices;
@@ -199,7 +199,7 @@ void criaIndices(FILE* base){
     }
     int tam, id, continua;
     char buff[40], *temp;
-    double offset;
+    long offset;
     fseek(base, 0, SEEK_SET);
     while(1){
         continua = fread(&tam, sizeof(int), 1, base);
@@ -209,15 +209,35 @@ void criaIndices(FILE* base){
         buff[tam] = '\0';
         temp= strtok(buff, "|");
         id= atoi(temp);
-        temp= strtok(NULL, "|");
-        offset= atof(temp);
+        //temp= strtok(NULL, "|");
+        //offset= atof(temp);
+        offset= ftell(base);
         fwrite(&id, sizeof(int), 1, indices);
-        fwrite(&offset, sizeof(double), 1, indices);
+        fwrite(&offset, sizeof(long), 1, indices);
     }
     fclose(indices);
 }
 
+long buscaOffsetDoIndice(int id){
+    FILE* indices;
+    if ((indices = fopen("indices.txt", "r")) == NULL) {
+        printf("Erro na criação do arquivo Indices--- programa abortado\n");
+        exit(1);
+    }
+    fseek(indices, (id - 1)*(sizeof(int)+sizeof(long)), SEEK_SET);
+    int id_lido;
+    long offset;
+    fread(&id_lido, sizeof(int), 1, indices);
+    if(id != id_lido){
+        printf("ERRO - %d vs %d", id, id_lido);
+        exit(1);
+    }
+    fread(&offset, sizeof(long), 1, indices);
+    return offset;
+}
+
 int main(){
     povoaArquivo();
+    buscaOffsetDoIndice(3);
 }
 
