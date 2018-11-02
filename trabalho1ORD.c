@@ -156,7 +156,7 @@ void povoaArquivo(){
     FILE* input, *base;
     char s[200] = "";
     int tam;
-    if ((input = fopen("individuos2.txt", "r")) == NULL) {
+    if ((input = fopen("individuos.txt", "r")) == NULL) {
         printf("Erro na criação do arquivo Individuo--- programa abortado\n");
         exit(1);
     }
@@ -168,16 +168,12 @@ void povoaArquivo(){
     int fld_count = 0;
     while (readfield(input, &individuo) > 0){
           strcat(s, individuo.id_i);
-          printf("%s\n", individuo.id_i);
           strcat(s, "|");
           strcat(s, individuo.id_r);
-          printf("%s\n", individuo.id_r);
           strcat(s, "|");
           strcat(s, individuo.nome);
-          printf("%s\n", individuo.nome);
           strcat(s, "|");
           strcat(s, individuo.sexo);
-          printf("%s\n\n", individuo.sexo);
           strcat(s, "|");
           tam = strlen(s);
           //printf("A\n");
@@ -186,8 +182,39 @@ void povoaArquivo(){
           strcpy(s, "");
     }
     fclose(input);
+    criaIndices(base);
     fclose(base);
 
+}
+
+void criaIndices(FILE* base){
+    /*
+        Tamanho de cada registro: sizeof(int) + sizeof(double)
+    */
+
+    FILE* indices;
+    if ((indices = fopen("indices.txt", "w+")) == NULL) {
+        printf("Erro na criação do arquivo Indices--- programa abortado\n");
+        exit(1);
+    }
+    int tam, id, continua;
+    char buff[40], *temp;
+    double offset;
+    fseek(base, 0, SEEK_SET);
+    while(1){
+        continua = fread(&tam, sizeof(int), 1, base);
+        if(!continua)
+            break;
+        fread(buff, sizeof(char), tam, base);
+        buff[tam] = '\0';
+        temp= strtok(buff, "|");
+        id= atoi(temp);
+        temp= strtok(NULL, "|");
+        offset= atof(temp);
+        fwrite(&id, sizeof(int), 1, indices);
+        fwrite(&offset, sizeof(double), 1, indices);
+    }
+    fclose(indices);
 }
 
 int main(){
