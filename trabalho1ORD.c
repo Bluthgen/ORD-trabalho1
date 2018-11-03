@@ -197,7 +197,7 @@ void criaIndices(FILE* base){
         printf("Erro na criação do arquivo Indices--- programa abortado\n");
         exit(1);
     }
-    int tam, id, continua;
+    int tam, id= 0, id_ant, continua;
     char buff[40], *temp;
     long offset;
     fseek(base, 0, SEEK_SET);
@@ -208,9 +208,17 @@ void criaIndices(FILE* base){
         fread(buff, sizeof(char), tam, base);
         buff[tam] = '\0';
         temp= strtok(buff, "|");
+        id_ant= id;
         id= atoi(temp);
-        //temp= strtok(NULL, "|");
-        //offset= atof(temp);
+        if(id != id_ant + 1){
+            fseek(base, (-1)*(sizeof(char)*tam + sizeof(int)), SEEK_CUR);
+            id= -1;
+            offset= -1;
+            fwrite(&id, sizeof(int), 1, indices);
+            fwrite(&offset, sizeof(long), 1, indices);
+            id= id_ant+1;
+            continue;
+        }
         offset= ftell(base);
         fwrite(&id, sizeof(int), 1, indices);
         fwrite(&offset, sizeof(long), 1, indices);
@@ -238,6 +246,5 @@ long buscaOffsetDoIndice(int id){
 
 int main(){
     povoaArquivo();
-    buscaOffsetDoIndice(3);
 }
 
