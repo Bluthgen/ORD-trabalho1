@@ -190,6 +190,8 @@ void povoaArquivo(){
 void criaIndices(FILE* base){
     /*
         Tamanho de cada registro: sizeof(int) + sizeof(long)
+        Assume que os id_i estão em ordem
+        Se algum id_i for pulado, adiciona uma entrada para o individuo faltando com valores -1 para ficar mais facil de buscar
     */
 
     FILE* indices;
@@ -202,6 +204,7 @@ void criaIndices(FILE* base){
     long offset;
     fseek(base, 0, SEEK_SET);
     while(1){
+        offset= ftell(base);
         continua = fread(&tam, sizeof(int), 1, base);
         if(!continua)
             break;
@@ -219,7 +222,6 @@ void criaIndices(FILE* base){
             id= id_ant+1;
             continue;
         }
-        offset= ftell(base);
         fwrite(&id, sizeof(int), 1, indices);
         fwrite(&offset, sizeof(long), 1, indices);
     }
@@ -237,14 +239,41 @@ long buscaOffsetDoIndice(int id){
     long offset;
     fread(&id_lido, sizeof(int), 1, indices);
     if(id != id_lido){
-        printf("ERRO - %d vs %d", id, id_lido);
+        printf("ERRO - O indivíduo com id#%d não foi encontrado", id);
+        fclose(indices);
         exit(1);
     }
     fread(&offset, sizeof(long), 1, indices);
+    fclose(indices);
     return offset;
+}
+
+struct caes buscaPorId(int id){
+    long offset= buscaOffsetDoIndice(id);
+    FILE* base;
+    if ((base = fopen("base.txt", "r+")) == NULL) {
+        printf("Erro na criação do arquivo Base--- programa abortado\n");
+        exit(1);
+    }
+    char buff[40];
+    int tam;
+    fseek(base, offset, SEEK_SET);
+    fread(&tam, sizeof(int), 1, base);
+    fread(buff, sizeof(char), tam, base);
+    buff[tam] = '\0';
+    struct caes individuo;
+    strcpy(individuo.id_i, strtok(buff, "|"));
+    strcpy(individuo.id_r, strtok(NULL, "|"));
+    strcpy(individuo.nome, strtok(NULL, "|"));
+    strcpy(individuo.sexo, strtok(NULL, "|"));
+    //Adicionar a raça depois que a busca por id_r estiver pronta
+    printf("Encontrado individuo:\n\tId: %s\n\tNome: %s\n\tSexo: %s", individuo.id_i, individuo.nome, individuo.sexo);
+    fclose(base);
+    return individuo;
 }
 
 int main(){
     povoaArquivo();
+    buscaPorId(3);
 }
 
