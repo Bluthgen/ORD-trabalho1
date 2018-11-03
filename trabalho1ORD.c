@@ -13,6 +13,14 @@ typedef struct caes{
     char sexo[1];
 }caes;
 
+typedef struct indices{
+    int id;
+    long offset;
+}indices;
+
+indices listaIndices[500];
+int tamIndices= 0;
+
 int readfield(FILE*, caes*);
 int getline (char*, int);
 
@@ -187,23 +195,84 @@ void povoaArquivo(){
 
 }
 
-void criaIndices(FILE* base){
-    /*
-        Tamanho de cada registro: sizeof(int) + sizeof(long)
-        Assume que os id_i estão em ordem
-        Se algum id_i for pulado, adiciona uma entrada para o individuo faltando com valores -1 para ficar mais facil de buscar
-    */
-
-    FILE* indices;
-    if ((indices = fopen("indices.txt", "w+")) == NULL) {
+void gravaIndices(){
+    FILE* ind;
+    if ((ind = fopen("indices.txt", "w+")) == NULL) {
         printf("Erro na criação do arquivo Indices--- programa abortado\n");
         exit(1);
     }
-    int tam, id= 0, id_ant, continua;
+    int id;
+    long offset;
+    for(int i= 0; i<= tamIndices; i++){
+        id= listaIndices[i].id;
+        offset= listaIndices[i].offset;
+        fwrite(&id, sizeof(int), 1, ind);
+        fwrite(&offset, sizeof(long), 1, ind);
+    }
+}
+
+void merge(indices arr[], int l, int m, int r)
+{
+    int i, j, k;
+    int n1 = m - l + 1;
+    int n2 =  r - m;
+    indices L[n1], R[n2];
+    for (i = 0; i < n1; i++)
+        L[i] = arr[l + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[m + 1+ j];
+    i = 0;
+    j = 0;
+    k = l;
+    while (i < n1 && j < n2)
+    {
+        if (L[i].id <= R[j].id)
+        {
+            arr[k] = L[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+    while (i < n1)
+    {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+    while (j < n2)
+    {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+
+void mergeSort(indices arr[], int l, int r)
+{
+    if (l < r)
+    {
+        int m = l+(r-l)/2;
+        mergeSort(arr, l, m);
+        mergeSort(arr, m+1, r);
+        merge(arr, l, m, r);
+    }
+}
+
+void criaIndices(FILE* base){
+    /*
+        Tamanho de cada registro: sizeof(int) + sizeof(long)
+    */
+    int tam, id= 0, id_max, continua, i= -1;
     char buff[40], *temp;
     long offset;
     fseek(base, 0, SEEK_SET);
     while(1){
+        i++;
         offset= ftell(base);
         continua = fread(&tam, sizeof(int), 1, base);
         if(!continua)
@@ -211,24 +280,15 @@ void criaIndices(FILE* base){
         fread(buff, sizeof(char), tam, base);
         buff[tam] = '\0';
         temp= strtok(buff, "|");
-        id_ant= id;
         id= atoi(temp);
-        if(id != id_ant + 1){
-            fseek(base, (-1)*(sizeof(char)*tam + sizeof(int)), SEEK_CUR);
-            id= -1;
-            offset= -1;
-            fwrite(&id, sizeof(int), 1, indices);
-            fwrite(&offset, sizeof(long), 1, indices);
-            id= id_ant+1;
-            continue;
-        }
-        fwrite(&id, sizeof(int), 1, indices);
-        fwrite(&offset, sizeof(long), 1, indices);
+        listaIndices[i].id= id;
+        listaIndices[i].offset= offset;
+        tamIndices= i;
     }
-    fclose(indices);
+    mergeSort(listaIndices, 0, i-1);
 }
 
-long buscaOffsetDoIndice(int id){
+long buscaOffsetDoIndiceNoArquivo(int id){
     FILE* indices;
     if ((indices = fopen("indices.txt", "r")) == NULL) {
         printf("Erro na criação do arquivo Indices--- programa abortado\n");
@@ -246,6 +306,38 @@ long buscaOffsetDoIndice(int id){
     fread(&offset, sizeof(long), 1, indices);
     fclose(indices);
     return offset;
+}
+
+void carregaIndices(){
+    FILE* indices;
+    if ((indices = fopen("indices.txt", "r")) == NULL) {
+        printf("Erro na criação do arquivo Indices--- programa abortado\n");
+        exit(1);
+    }
+    int id, i= 0;
+    long offset;
+    while(fread(&id, sizeof(int), 1, indices)){
+        fread(&offset, sizeof(long), 1, indices);
+        listaIndices[tamIndices].id= id;
+        listaIndices[tamIndices].offset= offset;
+        tamIndices++;
+    }
+}
+
+long buscaOffsetDoIndice(int id){
+    int pos= tamIndices/2, min= 0, max= tamIndices;
+    while(listaIndices[pos].id != id){
+        if(max - min < 2){
+            printf("Erro - não encontrado");
+            exit(1);
+        }
+        if(listaIndices[pos].id < id)
+            min= pos;
+        else
+            max= pos;
+        pos= (min+max)/2;
+    }
+    return listaIndices[pos].offset;
 }
 
 struct caes buscaPorId(int id){
@@ -273,7 +365,12 @@ struct caes buscaPorId(int id){
 }
 
 int main(){
-    povoaArquivo();
-    buscaPorId(3);
+    /*
+        Use povoaArquivo() para importar uma nova lista de caes ou carregaIndices() para usar a mesma lista da sessâo anterior
+    */
+    //povoaArquivo();
+    carregaIndices();
+    buscaPorId(1);
+
 }
 
