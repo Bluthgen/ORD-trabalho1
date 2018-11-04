@@ -289,27 +289,36 @@ void monta_lista(){
     char buff[40];
     int tam, cont=0;
     fseek(base, 0, SEEK_SET);
-   int i=0, k=0;
+   int i=0, k=0, p=0;
     while(fread(&tam, sizeof(int), 1, base)){
-        
-        fseek(base, offset,SEEK_CUR);        
+        cont++;
+        fseek(base, offset,SEEK_CUR);
         fread(buff, sizeof(char), tam, base);
-        buff[tam] = '\0';        
+        buff[tam] = '\0';
+        //puts(buff);
+       // printf("\n%d\n",strlen(buff));
         strcpy(individuo.id_i, strtok(buff, "|"));
         strcpy(individuo.id_r, strtok(NULL, "|"));
         strcpy(individuo.nome, strtok(NULL, "|"));
         strcpy(individuo.sexo, strtok(NULL, "|"));
-    
-        listaInvertida[atoi(individuo.id_i)].id = atoi(individuo.id_i);
-        listaInvertida[atoi(individuo.id_i)].raca = atoi(individuo.id_r);
-        listaInvertida[atoi(individuo.id_i)].offset = listaIndices[atoi(individuo.id_i)].offset;
-        vetor_aux[atoi(individuo.id_r)]=listaInvertida[atoi(individuo.id_i)].id;
 
+        listaInvertida[p].id = atoi(individuo.id_i);
+        listaInvertida[p].raca = atoi(individuo.id_r);
+        listaInvertida[p].offset = listaIndices[atoi(individuo.id_i)-1].offset+4;
+        vetor_aux[atoi(individuo.id_r)]=listaInvertida[p].id;
 
+        if(listaSecundaria[atoi(individuo.id_r)].id == 0){
+            listaSecundaria[atoi(individuo.id_r)].id = atoi(individuo.id_r);
+            listaSecundaria[atoi(individuo.id_r)].indice = p+1;
+        }
         offset = buscaOffsetDoIndice(i+1);
+        p++;
     }
-    int l = 55;
-    while(l != 0 ){
+    for(int v=1;v<=18;v++){
+        printf("raca: %d, %d\n",listaSecundaria[v].indice, listaSecundaria[v].id);
+    }
+    int l = cont;
+    while(l >= 0 ){
         if(listaInvertida[l].id == vetor_aux[listaInvertida[l].raca]){
             listaInvertida[l].prox = -1;
         }
@@ -317,7 +326,7 @@ void monta_lista(){
             listaInvertida[l].prox = vetor_aux[listaInvertida[l].raca];
             vetor_aux[listaInvertida[l].raca] = listaInvertida[l].id;
         }
-        printf("\nid: %d prox:%i",listaInvertida[l].id, listaInvertida[l].prox);
+        //printf("ID:%d, PROX:%d\n", listaInvertida[l].id, listaInvertida[l].prox);
         l--;
     }
 
