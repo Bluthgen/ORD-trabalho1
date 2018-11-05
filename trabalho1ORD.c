@@ -18,39 +18,16 @@ typedef struct indices{
     long offset;
 }indices;
 
+typedef struct racas{
+    int id;
+    char nome[25];
+}racas;
+
+racas listaRacas[18];
+
 indices listaIndices[500];
 int tamIndices= 0;
 
-int readfield(FILE*, caes*);
-int getline (char*, int);
-
-
-
-void read() {
-
-    FILE* fd;
-    char s[30];
-    char filename[15];
-    int fld_count;
-
-    printf("Entre com o nome do arquivo a ser lido: ");
-    getline(filename, 15);
-    if ((fd = fopen(filename, "r")) == NULL) {
-       printf("Erro na abertura do arquivo --- programa abortado\n");
-       exit(1);
-    }
-    /* loop do programa principal -- chama a função 'readfield'
-	   enqto a função tiver sucesso (retorno > 0) */
-    fld_count = 0;
-   // while (readfield(fd,s) > 0)
-          printf("\tcampo #%d: %s\n", ++fld_count, s);
-
-    fclose(fd);
-}
-
-/* função que lê um campo na string s
-   e retorna o tamanho da string lida
-*/
 int readfield(FILE* fd, caes* ind){
     char str[20];
     char c;
@@ -78,74 +55,20 @@ int readfield(FILE* fd, caes* ind){
     return i;
 }
 
-/* função que lê uma linha do stdin para a string str
-*/
-int getline (char *str, int tam){
-	int i = 0;
-	fgets(str, tam, stdin);
-	//Tira o enter do fim da string, se houver
-	for (i = 0; str[i] != '\n' && str[i] != '\0'; i++);
-	str[i] = '\0';
-	//avanca o ponteiro do stdin para o final
-	fseek(stdin, 0L, SEEK_END);
-	return i;
+int readnome(FILE* fd, char* str){
+    //char str[25];
+    char c;
+    int i = 0;
+    str[0]= '\0';
+    c = fgetc(fd);
+    while (c!= EOF && c != DELIM){
+        str[i++] = c;
+        c = fgetc(fd);
+    }
+    str[i] = '\0';
+    return i;
 }
 
-int getline2 (char*, int);
-
-int write() {
-    char first[30], last[30], address[30], city[20], state[15], zip[9];
-    char filename[15];
-    FILE* fd;
-
-    printf("Entre com o nome do arquivo a ser criado: ");
-    getline2(filename, 15);
-
-    if ((fd = fopen(filename,"w")) == NULL) {
-        printf("Erro na criação do arquivo --- programa abortado\n");
-        exit(1);
-    }
-
-    printf("\n\nDigite o Sobrenome, ou <ENTER> para sair\n>>>");
-    getline2(last, 30);
-
-    while(strlen(last) > 0) {
-        printf("\nPrimeiro nome\n>>>");
-        getline(first, 30);
-        printf("\nEndereco\n>>>");
-        getline(address, 30);
-        printf("\nCidade\n>>>");
-        getline(city, 20);
-        printf("\nEstado\n>>>");
-        getline(state, 15);
-        printf("\nCEP\n>>>");
-        getline2(zip, 9);
-
-        /* envia as strings para o arquivo */
-        fputs(last, fd);
-        fputs(DELIM_STR, fd);
-        fputs(first, fd);
-        fputs(DELIM_STR, fd);
-        fputs(address, fd);
-        fputs(DELIM_STR, fd);
-        fputs(city, fd);
-        fputs(DELIM_STR, fd);
-        fputs(state, fd);
-        fputs(DELIM_STR, fd);
-        fputs(zip, fd);
-        fputs(DELIM_STR, fd);
-
-        /* começa a próxima entrada */
-        printf("\n\nDigite o Sobrenome, ou <ENTER> para sair\n>>>");
-        getline2(last, 30);
-    }
-
-    /* fechar o arquivo */
-    fclose(fd);
-}
-
-/* função que lê uma linha do stdin para a string str
-*/
 int getline2 (char *str, int tam){
 	int i = 0;
 	fgets(str, tam, stdin);
@@ -158,61 +81,7 @@ int getline2 (char *str, int tam){
 }
 
 
-
-void povoaArquivo(){
-    caes individuo;
-    FILE* input, *base;
-    char s[200] = "";
-    int tam;
-    if ((input = fopen("individuos.txt", "r")) == NULL) {
-        printf("Erro na criação do arquivo Individuo--- programa abortado\n");
-        exit(1);
-    }
-    if ((base = fopen("base.txt", "w+")) == NULL) {
-        printf("Erro na criação do arquivo Base--- programa abortado\n");
-        exit(1);
-    }
-    fseek(base, 0, SEEK_SET);
-    int fld_count = 0;
-    while (readfield(input, &individuo) > 0){
-          strcat(s, individuo.id_i);
-          strcat(s, "|");
-          strcat(s, individuo.id_r);
-          strcat(s, "|");
-          strcat(s, individuo.nome);
-          strcat(s, "|");
-          strcat(s, individuo.sexo);
-          strcat(s, "|");
-          tam = strlen(s);
-          //printf("A\n");
-          fwrite(&tam, sizeof(tam), 1, base);
-          fwrite(s, sizeof(char), tam, base);
-          strcpy(s, "");
-    }
-    fclose(input);
-    criaIndices(base);
-    fclose(base);
-
-}
-
-void gravaIndices(){
-    FILE* ind;
-    if ((ind = fopen("indices.txt", "w+")) == NULL) {
-        printf("Erro na criação do arquivo Indices--- programa abortado\n");
-        exit(1);
-    }
-    int id;
-    long offset;
-    for(int i= 0; i<= tamIndices; i++){
-        id= listaIndices[i].id;
-        offset= listaIndices[i].offset;
-        fwrite(&id, sizeof(int), 1, ind);
-        fwrite(&offset, sizeof(long), 1, ind);
-    }
-}
-
-void merge(indices arr[], int l, int m, int r)
-{
+void merge(indices arr[], int l, int m, int r){
     int i, j, k;
     int n1 = m - l + 1;
     int n2 =  r - m;
@@ -224,42 +93,74 @@ void merge(indices arr[], int l, int m, int r)
     i = 0;
     j = 0;
     k = l;
-    while (i < n1 && j < n2)
-    {
-        if (L[i].id <= R[j].id)
-        {
+    while (i < n1 && j < n2){
+        if (L[i].id <= R[j].id){
             arr[k] = L[i];
             i++;
-        }
-        else
-        {
+        }else{
             arr[k] = R[j];
             j++;
         }
         k++;
     }
-    while (i < n1)
-    {
+    while (i < n1){
         arr[k] = L[i];
         i++;
         k++;
     }
-    while (j < n2)
-    {
+    while (j < n2){
         arr[k] = R[j];
         j++;
         k++;
     }
 }
 
-void mergeSort(indices arr[], int l, int r)
-{
-    if (l < r)
-    {
+void mergeSort(indices arr[], int l, int r){
+    if (l < r){
         int m = l+(r-l)/2;
         mergeSort(arr, l, m);
         mergeSort(arr, m+1, r);
         merge(arr, l, m, r);
+    }
+}
+
+
+void leNomesRacas(){
+    FILE* arq;
+    if ((arq = fopen("nomes-racas.txt", "r")) == NULL) {
+        printf("Erro na criação do arquivo Indices--- programa abortado\n");
+        exit(1);
+    }
+    char buff[40];
+    for(int i= 0; i<18; i++){
+        readnome(arq, buff);
+        listaRacas[i].id= atoi(strtok(buff, " "));
+        strcpy(listaRacas[i].nome, strtok(NULL, "\n"));
+    }
+    fclose(arq);
+}
+
+char* getNomeRaca(int id){
+    if(id<1 || id>18)
+        return "";
+    return listaRacas[id-1].nome;
+}
+
+
+void gravaIndices(){
+    FILE* ind;
+    if ((ind = fopen("indices.txt", "w+")) == NULL) {
+        printf("Erro na criação do arquivo Indices--- programa abortado\n");
+        exit(1);
+    }
+    int id, num= tamIndices;
+    long offset;
+    fwrite(&num, sizeof(int), 1, ind);
+    for(int i= 0; i<= num; i++){
+        id= listaIndices[i].id;
+        offset= listaIndices[i].offset;
+        fwrite(&id, sizeof(int), 1, ind);
+        fwrite(&offset, sizeof(long), 1, ind);
     }
 }
 
@@ -286,6 +187,9 @@ void criaIndices(FILE* base){
         tamIndices= i;
     }
     mergeSort(listaIndices, 0, i-1);
+    for(int i= 0; i<tamIndices; i++){
+        printf("%i: %d\n", i, listaIndices[i].id);
+    }
 }
 
 long buscaOffsetDoIndiceNoArquivo(int id){
@@ -314,9 +218,11 @@ void carregaIndices(){
         printf("Erro na criação do arquivo Indices--- programa abortado\n");
         exit(1);
     }
-    int id, i= 0;
+    int id, num;
+    fread(&num, sizeof(int), 1, indices);
     long offset;
-    while(fread(&id, sizeof(int), 1, indices)){
+    for(int i= 0; i<num; i++){
+        fread(&id, sizeof(int), 1, indices);
         fread(&offset, sizeof(long), 1, indices);
         listaIndices[tamIndices].id= id;
         listaIndices[tamIndices].offset= offset;
@@ -324,20 +230,38 @@ void carregaIndices(){
     }
 }
 
+int getIndice(int id) {
+   int lowerBound = 0;
+   int upperBound = tamIndices -1;
+   int midPoint = -1;
+   int comparisons = 0;      
+   int index = -1;
+	
+   while(lowerBound <= upperBound) {
+      comparisons++;
+		
+      midPoint = lowerBound + (upperBound - lowerBound) / 2;	
+      if(listaIndices[midPoint].id == id) {
+         index = midPoint;
+         break;
+      } else {
+         if(listaIndices[midPoint].id < id) {
+            lowerBound = midPoint + 1;
+         }
+         else {
+            upperBound = midPoint -1;
+         }
+      }               
+   }
+   return index;
+}
+
 long buscaOffsetDoIndice(int id){
-    int pos= tamIndices/2, min= 0, max= tamIndices;
-    while(listaIndices[pos].id != id){
-        if(max - min < 2){
-            printf("Erro - não encontrado");
-            exit(1);
-        }
-        if(listaIndices[pos].id < id)
-            min= pos;
-        else
-            max= pos;
-        pos= (min+max)/2;
+    int index= getIndice(id);
+    if(index>=0){
+        return listaIndices[index].offset;
     }
-    return listaIndices[pos].offset;
+    return -1;
 }
 
 struct caes buscaPorId(int id){
@@ -359,18 +283,98 @@ struct caes buscaPorId(int id){
     strcpy(individuo.nome, strtok(NULL, "|"));
     strcpy(individuo.sexo, strtok(NULL, "|"));
     //Adicionar a raça depois que a busca por id_r estiver pronta
-    printf("Encontrado individuo:\n\tId: %s\n\tNome: %s\n\tSexo: %s", individuo.id_i, individuo.nome, individuo.sexo);
+    printf("Encontrado individuo:\n\tId: %s\n\tRaça: %s\n\tNome: %s\n\tSexo: %s\n", individuo.id_i, getNomeRaca(atoi(individuo.id_r)), individuo.nome, individuo.sexo);
     fclose(base);
     return individuo;
+}
+
+void povoaArquivo(char* nome){
+    caes individuo;
+    FILE* input, *base;
+    if(nome == ""){
+        nome= "arquivo.txt";
+    }
+    char s[200] = "";
+    int tam;
+    if ((input = fopen(nome, "r")) == NULL) {
+        printf("Erro na criação do arquivo Individuo--- programa abortado\n");
+        exit(1);
+    }
+    if ((base = fopen("base.txt", "w+")) == NULL) {
+        printf("Erro na criação do arquivo Base--- programa abortado\n");
+        exit(1);
+    }
+    fseek(base, 0, SEEK_SET);
+    int fld_count = 0;
+    while (readfield(input, &individuo) > 0){
+          strcat(s, individuo.id_i);
+          strcat(s, "|");
+          strcat(s, individuo.id_r);
+          strcat(s, "|");
+          strcat(s, individuo.nome);
+          strcat(s, "|");
+          strcat(s, individuo.sexo);
+          strcat(s, "|");
+          tam = strlen(s);
+          //printf("A\n");
+          fwrite(&tam, sizeof(tam), 1, base);
+          fwrite(s, sizeof(char), tam, base);
+          strcpy(s, "");
+    }
+    fclose(input);
+    criaIndices(base);
+    fclose(base);
+}
+
+void dialogo(){
+    printf("Bem vindo(a) a aplicação!\n \
+            Ainda não foi cadastrado nenhum cão, por favor digite o nome de um arquivo:\n");
+    char input[40];
+    getline2(input, 40);
+    povoaArquivo(input);
+    int flag= -1; 
+    while(1){
+        printf("O que você deseja fazer?\n \
+                0: Sair\n \
+                1: Buscar um cão pelo seu id\n \
+                2: Buscar um cão pelo sua raça\n");
+        input[0]= '\0';
+        
+        int flag= -1;    
+        
+        getline2(input,1);
+        switch(input[0]){
+            case '0': exit(1);
+            case '1': flag= 1;
+                      break;
+            case '2': flag= 2;
+                      break;
+            default: flag= -1;
+        }
+        if(flag == 1){
+            printf("Qual é o id do cão a ser buscado?\n");
+            getline2(input, 2);
+            
+        }
+    }
+
 }
 
 int main(){
     /*
         Use povoaArquivo() para importar uma nova lista de caes ou carregaIndices() para usar a mesma lista da sessâo anterior
     */
-    //povoaArquivo();
-    carregaIndices();
-    buscaPorId(1);
+    leNomesRacas();    
+    povoaArquivo("individuos.txt");
+    //carregaIndices();
+    //gravaIndices();
+
+    //buscaPorId(3);
+    //buscaPorId(7);
+    //buscaPorId(9);
+    //buscaPorId(5);
+    //buscaPorId(6);
+    //buscaPorId(10);
 
 }
 
