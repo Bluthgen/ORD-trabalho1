@@ -44,7 +44,8 @@ int tamSec= 0, tamInvert= 0;
 indices listaIndices[500];
 int tamIndices= 0;
 racas listaRacas[18];
-racas listaNomeRacas[18];
+racas listaNomeRacas[100];
+int tamNomeRacas= 0;
 
 int readfield(FILE* fd, caes* ind){
     char str[20];
@@ -143,23 +144,28 @@ void mergeSort(indices arr[], int l, int r){
     }
 }
 
-void leNomesRacas(){
+void leNomesRacas(char* nome){
     FILE* arq;
-    if ((arq = fopen("nome-racas.txt", "r")) == NULL) {
+    if(!strlen(nome))
+        nome="lista de racas.txt";
+    if ((arq = fopen(nome, "r")) == NULL) {
         printf("Erro na criacão do arquivo Racas--- programa abortado\n");
         exit(1);
     }
     char buff[40];
-    for(int i= 0; i<18; i++){
+    while(1){
         readnome(arq, buff);
-        listaNomeRacas[i].id= atoi(strtok(buff, " "));
-        strcpy(listaNomeRacas[i].raca, strtok(NULL, "\n"));
+        if(!strlen(buff))
+            break;
+        listaNomeRacas[tamNomeRacas].id= atoi(strtok(buff, " "));
+        strcpy(listaNomeRacas[tamNomeRacas].raca, strtok(NULL, "\n"));
+        tamNomeRacas++;
     }
     fclose(arq);
 }
 
 char* getNomeRaca(int id){
-    if(id<1 || id>18)
+    if(id<1 || id>tamNomeRacas)
         return "";
     return listaNomeRacas[id-1].raca;
 }
@@ -167,7 +173,7 @@ char* getNomeRaca(int id){
 int getIdRaca(char* nome){ 
     if(strlen(nome)){
         int len= strlen(nome);
-        for(int j=0; j<18; j++){            
+        for(int j=0; j<tamNomeRacas; j++){            
             if(!strcmp(listaNomeRacas[j].raca, nome)){
                 return j+1;
             }        
@@ -480,7 +486,7 @@ int main(){
     carregaIndices();
 
     monta_lista();
-    leNomesRacas();
+    leNomesRacas("nome-racas.txt");
     //buscaPorId(3);
     //buscaPorId(7);
     //buscaPorId(9);
