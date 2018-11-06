@@ -44,7 +44,8 @@ int tamSec= 0, tamInvert= 0;
 indices listaIndices[500];
 int tamIndices= 0;
 racas listaRacas[18];
-racas listaRacas2[18];
+racas listaNomeRacas[100];
+int tamNomeRacas= 0;
 
 int readfield(FILE* fd, caes* ind){
     char str[20];
@@ -142,28 +143,45 @@ void mergeSort(indices arr[], int l, int r){
         merge(arr, l, m, r);
     }
 }
-/*
-void leNomesRacas(){
+
+void leNomesRacas(char* nome){
     FILE* arq;
-    if ((arq = fopen("nome-racas.txt", "r")) == NULL) {
+    if(!strlen(nome))
+        nome="lista de racas.txt";
+    if ((arq = fopen(nome, "r")) == NULL) {
         printf("Erro na criacão do arquivo Racas--- programa abortado\n");
         exit(1);
     }
     char buff[40];
-    for(int i= 0; i<18; i++){
+    while(1){
         readnome(arq, buff);
-        listaRacas[i].id= atoi(strtok(buff, " "));
-        strcpy(listaRacas[i].raca, strtok(NULL, "\n"));
+        if(!strlen(buff))
+            break;
+        listaNomeRacas[tamNomeRacas].id= atoi(strtok(buff, " "));
+        strcpy(listaNomeRacas[tamNomeRacas].raca, strtok(NULL, "\n"));
+        tamNomeRacas++;
     }
     fclose(arq);
 }
-/*
+
 char* getNomeRaca(int id){
-    if(id<1 || id>18)
+    if(id<1 || id>tamNomeRacas)
         return "";
-    return listaRacas[id-1].raca;
+    return listaNomeRacas[id-1].raca;
 }
-*/
+
+int getIdRaca(char* nome){
+    if(strlen(nome)){
+        int len= strlen(nome);
+        for(int j=0; j<tamNomeRacas; j++){
+            if(!strcmp(listaNomeRacas[j].raca, nome)){
+                return j+1;
+            }
+        }
+    }
+    return -1;
+}
+
 
 void gravaIndices(){
     FILE* ind;
@@ -301,19 +319,31 @@ struct caes buscaPorId(int id){
     strcpy(individuo.nome, strtok(NULL, "|"));
     strcpy(individuo.sexo, strtok(NULL, "|"));
     //Adicionar a raça depois que a busca por id_r estiver pronta
-    printf("Encontrado individuo:\n\tId: %s\n\tRaca: %s\n\tNome: %s\n\tSexo: %s\n", individuo.id_i, individuo.id_r, individuo.nome, individuo.sexo);
+    printf("Encontrado individuo:\n\tId: %s\n\tRaca: %s\n\tNome: %s\n\tSexo: %s\n", individuo.id_i, getNomeRaca(atoi(individuo.id_r)), individuo.nome, individuo.sexo);
     fclose(base);
     return individuo;
 }
 
 
 void buscaPorRaca(int id_r){
-    long i = (int)listaSecundaria[id_r].indice;
+    int i = (int)listaSecundaria[id_r].indice;
     printf("%d", i);
     while(i > -1){
         int id = listaInvertida[i-1].id;
         buscaPorId(id);
 
+        i = listaInvertida[i-1].prox;
+    }
+}
+
+void buscaPorNomeDaRaca(char* nome){
+    int id_r= getIdRaca(nome);
+    if(id_r < 0)
+        printf("Raça não encontrada");
+    int i = (int)listaSecundaria[id_r].indice;
+    while(i > -1){
+        int id = listaInvertida[i-1].id;
+        buscaPorId(id);
         i = listaInvertida[i-1].prox;
     }
 }
@@ -367,10 +397,11 @@ void monta_lista(){
     char buff[40];
     int tam, cont=0;
     fseek(base, 0, SEEK_SET);
-   int i=0, k=0, p=0;
+    int i=0, k=0, p=0;
     while(fread(&tam, sizeof(int), 1, base)){
         cont++;
-        fseek(base, offset,SEEK_CUR);
+        //fseek(base, offset,SEEK_CUR);
+        //printf("Offset: %ld\n", offset);
         fread(buff, sizeof(char), tam, base);
         buff[tam] = '\0';
         strcpy(individuo.id_i, strtok(buff, "|"));
@@ -387,12 +418,17 @@ void monta_lista(){
             listaSecundaria[atoi(individuo.id_r)].id = atoi(individuo.id_r);
             listaSecundaria[atoi(individuo.id_r)].indice = p+1;
         }
+        /*
+        printf("i: %d\n", i);
         offset = buscaOffsetDoIndice(i+1);
+        printf("Offset Novo: %ld\n");
+        */
         p++;
     }
-    for(int v=1;v<=18;v++){
-      printf("raca: %d, %d\n",listaSecundaria[v].id,listaSecundaria[v].indice);
-    }
+    printf("Saiu do loop\n");
+    //for(int v=1;v<=18;v++){
+    //  printf("raca: %ld, %d\n",listaSecundaria[v].id,listaSecundaria[v].indice);
+    //}
     int l = cont;
     while(l >= 0 ){
         if(listaInvertida[l].id == vetor_aux[listaInvertida[l].raca]){
@@ -402,7 +438,7 @@ void monta_lista(){
             listaInvertida[l].prox = vetor_aux[listaInvertida[l].raca];
             vetor_aux[listaInvertida[l].raca] = listaInvertida[l].id;
         }
-        printf("ID:%d, PROX:%d\n", listaInvertida[l].id, listaInvertida[l].prox);
+        //printf("ID:%ld, PROX:%d\n", listaInvertida[l].id, listaInvertida[l].prox);
         l--;
     }
 
@@ -413,37 +449,70 @@ void monta_lista(){
 
 
 void dialogo(){
-    printf("Bem vindo(a) a aplicação!\n \
-            Ainda não foi cadastrado nenhum cão, por favor digite o nome de um arquivo:\n");
+    printf("Bem vindo(a) a aplicacao!\n \
+            Ainda nao foi cadastrado nenhum cao, por favor digite o nome de um arquivo:\n");
     char input[40];
     getline2(input, 40);
     povoaArquivo(input);
-    int flag= -1;
-    while(1){
-        printf("O que você deseja fazer?\n \
+    gravaIndices();
+    carregaIndices();
+    leNomesRacas("");
+    monta_lista();
+    int flag=1;
+    int opcao;
+    while(flag){
+        printf("O que vc deseja fazer?\n \
                 0: Sair\n \
                 1: Buscar um cão pelo seu id\n \
-                2: Buscar um cão pelo sua raça\n");
+                2: Buscar um cão pelo sua raça\n \
+                3: Ler um novo arquivo\n");
         input[0]= '\0';
 
-        int flag= -1;
-
-        getline2(input,1);
-        switch(input[0]){
-            case '0': exit(1);
-            case '1': flag= 1;
-                      break;
-            case '2': flag= 2;
-                      break;
-            default: flag= -1;
-        }
-        if(flag == 1){
-            printf("Qual é o id do cão a ser buscado?\n");
-            getline2(input, 2);
-
+        scanf("%d", &opcao);
+        switch(opcao){
+            case 0: flag=0;
+                break;
+            case 1:
+                printf("Qual e o id do cao a ser buscado?\n");
+                int id;
+                scanf("%d", &id);
+                buscaPorId(id);
+                break;
+            case 2:
+                printf("Qual o nome da raca a ser buscada?\n");
+                fflush(stdin);
+                getline2(input, 30);
+                buscaPorNomeDaRaca(input);
+                break;
+            case 3: ;
+                printf("Qual o nome do arquivo a ser lido?\n");
+                getline2(input, 40);
+                preparaParaLerOutra();
+                povoaArquivo(input);
+                printf("\nLido segundo arquivo\n");
+                gravaIndices();
+                carregaIndices();
+                monta_lista();
+                printf("\nMontado\n");
+                break;
         }
     }
+}
 
+void preparaParaLerOutra(){
+    for(int i= 0; i<tamSec; i++){
+        listaSecundaria[i].id= listaSecundaria[i].indice= 0;
+    }
+    for(int i= 0; i<tamInvert; i++){
+        listaInvertida[i].id= listaInvertida[i].offset= listaInvertida[i].raca= 0;
+        listaInvertida[i].id= -1;
+    }
+    for(int i= 0; i<tamIndices; i++){
+        listaIndices[i].id= listaIndices[i].offset= 0;
+    }
+    tamSec= 0;
+	tamInvert= 0;
+	tamIndices= 0;
 }
 
 int main(){
@@ -451,18 +520,18 @@ int main(){
         Use povoaArquivo() para importar uma nova lista de caes ou carregaIndices() para usar a mesma lista da sessâo anterior
     */
    // leNomesRacas();
-    povoaArquivo("individuos.txt");
-    gravaIndices();
-    carregaIndices();
+    dialogo();
+    //buscaPorRaca(3);
+    //buscaPorRaca(12);
+    //buscaPorNomeDaRaca("BEAGLE");
 
-    monta_lista();
-    //buscaPorId(3);
-    //buscaPorId(7);
-    //buscaPorId(9);
-    //buscaPorId(5);
-    //buscaPorId(6);
-    buscaPorRaca(3);
-    buscaPorRaca(12);
+
+    buscaPorId(3);
+    buscaPorId(7);
+    buscaPorId(1);
+    buscaPorId(5);
+    //gravaIndices();
+    //carregaIndices();
     //buscaPorId(10);
 
 
