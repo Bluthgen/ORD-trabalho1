@@ -1,53 +1,43 @@
 ﻿#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define MAX_REC_SIZE 512
+ #define MAX_REC_SIZE 512
 #define DELIM_STR "|"
 #define DELIM '\n'
-
-int vetor_aux[100];
-
-
-typedef struct racas{
+ int vetor_aux[100];
+ typedef struct racas{
     int id;
     char raca[30];
 }racas;
-
-typedef struct caes{
+ typedef struct caes{
     char id_i[5];
     char id_r[5];
     char nome[20];
     char sexo[1];
 }caes;
-
-typedef struct indices{
+ typedef struct indices{
     int id;
     long offset;
 }indices;
-
-typedef struct invertida{
+ typedef struct invertida{
     int id;
     int raca;
     long offset;
     long prox;
 }invertida;
-
-typedef struct secundaria{
+ typedef struct secundaria{
     int id;
     long indice;
 }secundaria;
-
-secundaria listaSecundaria[100];
+ secundaria listaSecundaria[100];
 invertida listaInvertida[500];
-int tamSec= 0, tamInvert= 0;
+int tamSec= 18, tamInvert= 0;
 indices listaIndices[500];
 int tamIndices= 0;
 racas listaRacas[18];
 racas listaNomeRacas[100];
 int tamNomeRacas= 0;
-
-int readfield(FILE* fd, caes* ind){
+ int readfield(FILE* fd, caes* ind){
     char str[20];
     char c;
     int i = 0;
@@ -73,8 +63,7 @@ int readfield(FILE* fd, caes* ind){
     }
     return i;
 }
-
-int getline2 (char *str, int tam){
+ int getline2 (char *str, int tam){
 	int i = 0;
 	fgets(str, tam, stdin);
 	//Tira o enter do fim da string, se houver
@@ -84,8 +73,7 @@ int getline2 (char *str, int tam){
 	fseek(stdin, 0L, SEEK_END);
 	return i;
 }
-
-int readnome(FILE* fd, char* str){
+ int readnome(FILE* fd, char* str){
     //char str[25];
     char c;
     int i = 0;
@@ -98,10 +86,7 @@ int readnome(FILE* fd, char* str){
     str[i] = '\0';
     return i;
 }
-
-
-
-void merge(indices arr[], int l, int m, int r){
+ void merge(indices arr[], int l, int m, int r){
     int i, j, k;
     int n1 = m - l + 1;
     int n2 =  r - m;
@@ -134,8 +119,7 @@ void merge(indices arr[], int l, int m, int r){
         k++;
     }
 }
-
-void mergeSort(indices arr[], int l, int r){
+ void mergeSort(indices arr[], int l, int r){
     if (l < r){
         int m = l+(r-l)/2;
         mergeSort(arr, l, m);
@@ -143,8 +127,7 @@ void mergeSort(indices arr[], int l, int r){
         merge(arr, l, m, r);
     }
 }
-
-void leNomesRacas(char* nome){
+ void leNomesRacas(char* nome){
     FILE* arq;
     if(!strlen(nome))
         nome="lista de racas.txt";
@@ -163,14 +146,12 @@ void leNomesRacas(char* nome){
     }
     fclose(arq);
 }
-
-char* getNomeRaca(int id){
+ char* getNomeRaca(int id){
     if(id<1 || id>tamNomeRacas)
         return "";
     return listaNomeRacas[id-1].raca;
 }
-
-int getIdRaca(char* nome){
+ int getIdRaca(char* nome){
     if(strlen(nome)){
         int len= strlen(nome);
         for(int j=0; j<tamNomeRacas; j++){
@@ -181,9 +162,7 @@ int getIdRaca(char* nome){
     }
     return -1;
 }
-
-
-void gravaIndices(){
+ void gravaIndices(){
     FILE* ind;
     if ((ind = fopen("indices.txt", "w+")) == NULL) {
         printf("Erro na criação do arquivo Indices--- programa abortado\n");
@@ -195,12 +174,55 @@ void gravaIndices(){
     for(int i= 0; i<= num; i++){
         id= listaIndices[i].id;
         offset= listaIndices[i].offset;
-        fwrite(&id, sizeof(int), 1, ind);
-        fwrite(&offset, sizeof(long), 1, ind);
+        fprintf(ind,"%d",id);
+        fprintf(ind,"|");
+        fprintf(ind,"%d", offset);
+        fprintf(ind,"|");
     }
 }
-
-void criaIndices(FILE* base){
+ void gravaInvertida(){
+    FILE* ind;
+    if ((ind = fopen("invertida.txt", "w+")) == NULL) {
+        printf("Erro na criação do arquivo Invertida--- programa abortado\n");
+        exit(1);
+    }
+    int id, raca, num= tamInvert;
+    long offset, prox;
+    fwrite(&num, sizeof(int), 1, ind);
+    for(int i= 0; i<= num; i++){
+        id= listaInvertida[i].id;
+        raca= listaInvertida[i].raca;
+        offset= listaInvertida[i].offset;
+        prox= listaInvertida[i].prox;
+        fprintf(ind,"%d",id);
+        fprintf(ind,"|");
+        fprintf(ind,"%d",raca);
+        fprintf(ind,"|");
+        fprintf(ind,"%d", offset);
+        fprintf(ind,"|");
+        fprintf(ind,"%d",prox);
+        fprintf(ind,"|");
+    }
+}
+ void gravaSecundaria(){
+    FILE* ind;
+    if ((ind = fopen("secundaria.txt", "w+")) == NULL) {
+        printf("Erro na criação do arquivo Secundaria--- programa abortado\n");
+        exit(1);
+    }
+    int id, num= tamIndices;
+    long indice;
+    fwrite(&num, sizeof(int), 1, ind);
+    for(int i= 0; i<= num; i++){
+        id= listaSecundaria[i].id;
+        indice= listaSecundaria[i].indice;
+        fprintf(ind,"%d",id);
+        fprintf(ind,"|");
+        fprintf(ind,"%d",indice);
+        fprintf(ind,"|");
+    }
+}
+ void criaIndices(FILE* base){
     /*
         Tamanho de cada registro: sizeof(int) + sizeof(long)
     */
@@ -224,9 +246,7 @@ void criaIndices(FILE* base){
     }
     mergeSort(listaIndices, 0, i-1);
     }
-
-
-long buscaOffsetDoIndiceNoArquivo(int id){
+ long buscaOffsetDoIndiceNoArquivo(int id){
     FILE* indices;
     if ((indices = fopen("indices.txt", "r")) == NULL) {
         printf("Erro na criação do arquivo Indices--- programa abortado\n");
@@ -245,8 +265,7 @@ long buscaOffsetDoIndiceNoArquivo(int id){
     fclose(indices);
     return offset;
 }
-
-void carregaIndices(){
+ void carregaIndices(){
     FILE* indices;
     if ((indices = fopen("indices.txt", "r")) == NULL) {
         printf("Erro na criação do arquivo Indices--- programa abortado\n");
@@ -263,18 +282,53 @@ void carregaIndices(){
         tamIndices++;
     }
 }
-
-int getIndice(int id) {
+ void carregaInvertida(){
+    FILE* invert;
+    if ((invert = fopen("invertida.txt", "r")) == NULL) {
+        printf("Erro na criação do arquivo Invertida--- programa abortado\n");
+        exit(1);
+    }
+    int id,raca,num;
+    fread(&num, sizeof(int), 1, invert);
+    long offset, prox;
+    for(int i= 0; i<num; i++){
+        fread(&id, sizeof(int), 1, invert);
+        fread(&raca, sizeof(int), 1, invert);
+        fread(&offset, sizeof(long), 1, invert);
+        fread(&prox, sizeof(long), 1, invert);
+        listaInvertida[tamInvert].id= id;
+        listaInvertida[tamInvert].raca= raca;
+        listaInvertida[tamInvert].offset= offset;
+        listaInvertida[tamInvert].prox= prox;
+        tamIndices++;
+    }
+}
+ void carregaSecundaria(){
+    FILE* secundaria;
+    if ((secundaria = fopen("secundaria.txt", "r")) == NULL) {
+        printf("Erro na criação do arquivo Secundaria--- programa abortado\n");
+        exit(1);
+    }
+    int id, num;
+    fread(&num, sizeof(int), 1, secundaria);
+    long indice;
+    for(int i= 0; i<num; i++){
+        fread(&id, sizeof(int), 1, secundaria);
+        fread(&indice, sizeof(long), 1, secundaria);
+        listaSecundaria[tamIndices].id= id;
+        listaSecundaria[tamIndices].indice= indice;
+        tamIndices++;
+    }
+}
+ int getIndice(int id) {
    int lowerBound = 0;
    int upperBound = tamIndices -1;
    int midPoint = -1;
    int comparisons = 0;
    int index = -1;
-
-   while(lowerBound <= upperBound) {
+    while(lowerBound <= upperBound) {
       comparisons++;
-
-      midPoint = lowerBound + (upperBound - lowerBound) / 2;
+       midPoint = lowerBound + (upperBound - lowerBound) / 2;
       if(listaIndices[midPoint].id == id) {
          index = midPoint;
          break;
@@ -289,54 +343,52 @@ int getIndice(int id) {
    }
    return index;
 }
-
-long buscaOffsetDoIndice(int id){
+ long buscaOffsetDoIndice(int id){
     int index= getIndice(id);
     if(index>=0){
         return listaIndices[index].offset;
     }
     return -1;
 }
-
-
-
-struct caes buscaPorId(int id){
-    long offset= buscaOffsetDoIndice(id);
-    FILE* base;
-    if ((base = fopen("base.txt", "r+")) == NULL) {
-        printf("Erro na criação do arquivo Base--- programa abortado\n");
+ struct caes buscaPorId(int id){
+    if(id >= tamInvert+1){
+        printf("\nIndividuo não encontrado!--- programa abortado\n");
         exit(1);
     }
-    char buff[40];
-    int tam;
-    fseek(base, offset, SEEK_SET);
-    fread(&tam, sizeof(int), 1, base);
-    fread(buff, sizeof(char), tam, base);
-    buff[tam] = '\0';
-    struct caes individuo;
-    strcpy(individuo.id_i, strtok(buff, "|"));
-    strcpy(individuo.id_r, strtok(NULL, "|"));
-    strcpy(individuo.nome, strtok(NULL, "|"));
-    strcpy(individuo.sexo, strtok(NULL, "|"));
-    //Adicionar a raça depois que a busca por id_r estiver pronta
-    printf("Encontrado individuo:\n\tId: %s\n\tRaca: %s\n\tNome: %s\n\tSexo: %s\n", individuo.id_i, getNomeRaca(atoi(individuo.id_r)), individuo.nome, individuo.sexo);
-    fclose(base);
-    return individuo;
+    else{
+        long offset= buscaOffsetDoIndice(id);
+        FILE* base;
+        if ((base = fopen("base.txt", "r+")) == NULL) {
+            printf("Erro na criação do arquivo Base--- programa abortado\n");
+            exit(1);
+        }
+        char buff[40];
+        int tam;
+        fseek(base, offset, SEEK_SET);
+        fread(&tam, sizeof(int), 1, base);
+        fread(buff, sizeof(char), tam, base);
+        buff[tam] = '\0';
+        struct caes individuo;
+        strcpy(individuo.id_i, strtok(buff, "|"));
+        strcpy(individuo.id_r, strtok(NULL, "|"));
+        strcpy(individuo.nome, strtok(NULL, "|"));
+        strcpy(individuo.sexo, strtok(NULL, "|"));
+        //Adicionar a raça depois que a busca por id_r estiver pronta
+        printf("Encontrado individuo:\n\tId: %s\n\tRaca: %s\n\tNome: %s\n\tSexo: %s\n", individuo.id_i, getNomeRaca(atoi(individuo.id_r)), individuo.nome, individuo.sexo);
+        fclose(base);
+        return individuo;
+    }
 }
-
-
-void buscaPorRaca(int id_r){
+ void buscaPorRaca(int id_r){
     int i = (int)listaSecundaria[id_r].indice;
     printf("%d", i);
     while(i > -1){
         int id = listaInvertida[i-1].id;
         buscaPorId(id);
-
-        i = listaInvertida[i-1].prox;
+         i = listaInvertida[i-1].prox;
     }
 }
-
-void buscaPorNomeDaRaca(char* nome){
+ void buscaPorNomeDaRaca(char* nome){
     int id_r= getIdRaca(nome);
     if(id_r < 0)
         printf("Raça não encontrada");
@@ -347,8 +399,7 @@ void buscaPorNomeDaRaca(char* nome){
         i = listaInvertida[i-1].prox;
     }
 }
-
-void povoaArquivo(char* nome){
+ void povoaArquivo(char* nome){
     caes individuo;
     FILE* input, *base;
     if(nome == ""){
@@ -385,8 +436,7 @@ void povoaArquivo(char* nome){
     criaIndices(base);
     fclose(base);
 }
-
-void monta_lista(){
+ void monta_lista(){
     long offset=0;
     FILE* base;
     if ((base = fopen("base.txt", "r+")) == NULL) {
@@ -408,27 +458,17 @@ void monta_lista(){
         strcpy(individuo.id_r, strtok(NULL, "|"));
         strcpy(individuo.nome, strtok(NULL, "|"));
         strcpy(individuo.sexo, strtok(NULL, "|"));
-
-        listaInvertida[p].id = atoi(individuo.id_i);
+         listaInvertida[p].id = atoi(individuo.id_i);
         listaInvertida[p].raca = atoi(individuo.id_r);
         listaInvertida[p].offset = listaIndices[atoi(individuo.id_i)-1].offset+4;
         vetor_aux[atoi(individuo.id_r)]=listaInvertida[p].id;
-
-        if(listaSecundaria[atoi(individuo.id_r)].id == 0){
+         if(listaSecundaria[atoi(individuo.id_r)].id == 0){
             listaSecundaria[atoi(individuo.id_r)].id = atoi(individuo.id_r);
             listaSecundaria[atoi(individuo.id_r)].indice = p+1;
         }
-        /*
-        printf("i: %d\n", i);
-        offset = buscaOffsetDoIndice(i+1);
-        printf("Offset Novo: %ld\n");
-        */
         p++;
     }
-    printf("Saiu do loop\n");
-    //for(int v=1;v<=18;v++){
-    //  printf("raca: %ld, %d\n",listaSecundaria[v].id,listaSecundaria[v].indice);
-    //}
+    tamInvert = p;
     int l = cont;
     while(l >= 0 ){
         if(listaInvertida[l].id == vetor_aux[listaInvertida[l].raca]){
@@ -438,16 +478,36 @@ void monta_lista(){
             listaInvertida[l].prox = vetor_aux[listaInvertida[l].raca];
             vetor_aux[listaInvertida[l].raca] = listaInvertida[l].id;
         }
-        //printf("ID:%ld, PROX:%d\n", listaInvertida[l].id, listaInvertida[l].prox);
         l--;
     }
-
-
-    fclose(base);
-
+     fclose(base);
+ }
+ void printRacas(){
+	for(int i=0; i< tamNomeRacas; i++){
+		printf("%s -> Digite %d\n", listaNomeRacas[i].raca, listaNomeRacas[i].id);
+	}
+}
+ void grava(){
+	gravaIndices();
+	gravaInvertida();
+	gravaSecundaria();
 }
 
-
+ void preparaParaLerOutra(){
+    for(int i= 0; i<tamSec; i++){
+        listaSecundaria[i].id= listaSecundaria[i].indice= 0;
+    }
+    for(int i= 0; i<tamInvert; i++){
+        listaInvertida[i].id= listaInvertida[i].offset= listaInvertida[i].raca= 0;
+        listaInvertida[i].id= -1;
+    }
+    for(int i= 0; i<tamIndices; i++){
+        listaIndices[i].id= listaIndices[i].offset= 0;
+    }
+    tamSec= 0;
+    tamInvert= 0;
+    tamIndices= 0;
+}
 void dialogo(){
     printf("Bem vindo(a) a aplicacao!\n \
             Ainda nao foi cadastrado nenhum cao, por favor digite o nome de um arquivo:\n");
@@ -471,7 +531,8 @@ void dialogo(){
         scanf("%d", &opcao);
         switch(opcao){
             case 0: flag=0;
-                break;
+              grava();
+              exit(1);
             case 1:
                 printf("Qual e o id do cao a ser buscado?\n");
                 int id;
@@ -479,10 +540,11 @@ void dialogo(){
                 buscaPorId(id);
                 break;
             case 2:
-                printf("Qual o nome da raca a ser buscada?\n");
-                fflush(stdin);
-                getline2(input, 30);
-                buscaPorNomeDaRaca(input);
+                printf("Qual é a raça a ser buscada?\n");
+                printRacas();
+                int id_r;
+                scanf("%d", &id_r);
+                buscaPorRaca(id_r);
                 break;
             case 3: ;
                 printf("Qual o nome do arquivo a ser lido?\n");
@@ -498,41 +560,7 @@ void dialogo(){
         }
     }
 }
-
-void preparaParaLerOutra(){
-    for(int i= 0; i<tamSec; i++){
-        listaSecundaria[i].id= listaSecundaria[i].indice= 0;
-    }
-    for(int i= 0; i<tamInvert; i++){
-        listaInvertida[i].id= listaInvertida[i].offset= listaInvertida[i].raca= 0;
-        listaInvertida[i].id= -1;
-    }
-    for(int i= 0; i<tamIndices; i++){
-        listaIndices[i].id= listaIndices[i].offset= 0;
-    }
-    tamSec= 0;
-	tamInvert= 0;
-	tamIndices= 0;
-}
-
-int main(){
-    /*
-        Use povoaArquivo() para importar uma nova lista de caes ou carregaIndices() para usar a mesma lista da sessâo anterior
-    */
-   // leNomesRacas();
+ int main(){
     dialogo();
-    //buscaPorRaca(3);
-    //buscaPorRaca(12);
-    //buscaPorNomeDaRaca("BEAGLE");
-
-
-    buscaPorId(3);
-    buscaPorId(7);
-    buscaPorId(1);
-    buscaPorId(5);
-    //gravaIndices();
-    //carregaIndices();
-    //buscaPorId(10);
-
 
 }
