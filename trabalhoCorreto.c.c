@@ -403,9 +403,7 @@ void monta_lista(){
         //fseek(base, offset,SEEK_CUR);
         //printf("Offset: %ld\n", offset);
         fread(buff, sizeof(char), tam, base);
-        printf("Buffer: %s\n", buff);
         buff[tam] = '\0';
-        printf("Buffer: %s\n", buff);
         strcpy(individuo.id_i, strtok(buff, "|"));
         strcpy(individuo.id_r, strtok(NULL, "|"));
         strcpy(individuo.nome, strtok(NULL, "|"));
